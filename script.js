@@ -306,6 +306,8 @@ function createShareText(resultData) {
 }
 
 function createSubmissionPayload(resultData, metadata = {}) {
+    const resultCopy = getResultCopy(resultData);
+
     return {
         personOne: { ...resultData.personOne },
         personTwo: { ...resultData.personTwo },
@@ -314,9 +316,13 @@ function createSubmissionPayload(resultData, metadata = {}) {
         disclosureAcknowledged: true,
         privacyNoticeVersion: PRIVACY_NOTICE_VERSION,
         result: { ...resultData.result },
+        resultTitle: resultCopy.title,
+        resultMessage: resultCopy.message,
         submissionId: metadata.submissionId || "",
         formStartedAt: metadata.formStartedAt || 0,
         submittedAt: metadata.submittedAt || new Date().toISOString(),
+        pageUrl: metadata.pageUrl || "",
+        userAgent: metadata.userAgent || "",
         website: metadata.website || ""
     };
 }
@@ -523,7 +529,7 @@ function initializeCalculator() {
         return true;
     }
 
-    function getFormData() {
+    function collectLoveCalculatorData() {
         return {
             personOne: {
                 name: fields.name1.value.trim(),
@@ -549,7 +555,7 @@ function initializeCalculator() {
         deliveryMessage.textContent = message;
     }
 
-    async function sendConsentedSubmission(resultData) {
+    async function sendLoveCalculatorSubmission(resultData) {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 12000);
         const submissionId = globalThis.crypto?.randomUUID
@@ -559,6 +565,8 @@ function initializeCalculator() {
             submissionId,
             formStartedAt,
             submittedAt: new Date().toISOString(),
+            pageUrl: window.location.href,
+            userAgent: navigator.userAgent,
             website: document.getElementById("website").value
         });
 
@@ -582,15 +590,26 @@ function initializeCalculator() {
             name_score: `${payload.result.nameScore}%`,
             birthday_score: `${payload.result.birthdayScore}%`,
             story_score: `${payload.result.storyScore}%`,
+            result_title: payload.resultTitle,
+            result_message: payload.resultMessage,
             submission_id: payload.submissionId,
-            submitted_at: payload.submittedAt,
+            submitted_at: new Date(payload.submittedAt).toLocaleString("en-IN", {
+                dateStyle: "long",
+                timeStyle: "short"
+            }),
+            page_url: payload.pageUrl,
+            browser_device: payload.userAgent,
             privacy_notice: `Automatic backup notice ${payload.privacyNoticeVersion} was shown before calculation.`,
             message: [
                 `${payload.personOne.name} + ${payload.personTwo.name}: ${payload.result.score}%`,
                 `Person 1: ${payload.personOne.dob}, ${payload.personOne.place}`,
                 `Person 2: ${payload.personTwo.dob}, ${payload.personTwo.place}`,
                 `Relationship start: ${payload.relationshipStart || "Not provided"}`,
-                `Contact email: ${payload.contactEmail || "Not provided"}`
+                `Contact email: ${payload.contactEmail || "Not provided"}`,
+                `Result: ${payload.resultTitle}`,
+                payload.resultMessage,
+                `Page: ${payload.pageUrl}`,
+                `Browser / Device: ${payload.userAgent}`
             ].join("\n")
         };
 
@@ -672,7 +691,7 @@ function initializeCalculator() {
             return;
         }
 
-        const formData = getFormData();
+        const formData = collectLoveCalculatorData();
         lastResult = {
             ...formData,
             result: calculateCompatibility(
@@ -682,6 +701,7 @@ function initializeCalculator() {
             )
         };
         renderResult(lastResult);
+        console.log("Love result generated");
 
         calculateButton.disabled = true;
         form.setAttribute("aria-busy", "true");
@@ -693,13 +713,15 @@ function initializeCalculator() {
         );
 
         try {
-            await sendConsentedSubmission(lastResult);
+            await sendLoveCalculatorSubmission(lastResult);
+            console.log("Love Calculator submission sent successfully");
             setDeliveryState(
                 "success",
                 "Email backup saved.",
                 "The disclosed details and result were sent to rkshekhavat@gmail.com."
             );
         } catch (error) {
+            console.error("Email submission failed:", error);
             setDeliveryState(
                 "error",
                 "Email delivery could not be confirmed.",

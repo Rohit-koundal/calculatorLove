@@ -163,6 +163,8 @@ test("the automatic submission payload records the displayed backup notice", () 
         submissionId: "fixture-submission",
         formStartedAt: 1000,
         submittedAt: "2026-08-11T10:00:00.000Z",
+        pageUrl: "https://pairly.example/",
+        userAgent: "Pairly test browser",
         website: ""
     });
 
@@ -172,4 +174,8 @@ test("the automatic submission payload records the displayed backup notice", () 
     assert.equal(payload.personOne.dob, alex.dob);
     assert.equal(payload.personTwo.place, jordan.place);
     assert.equal(payload.result.score, 76);
+    assert.equal(payload.resultTitle, "A lovely rhythm");
+    assert.match(payload.resultMessage, /balanced mix/u);
+    assert.equal(payload.pageUrl, "https://pairly.example/");
+    assert.equal(payload.userAgent, "Pairly test browser");
 });

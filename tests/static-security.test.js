@@ -38,6 +38,11 @@ test("automatic backup is clearly disclosed at the one-click action", () => {
     assert.match(script, /disclosureAcknowledged: true/u);
     assert.match(script, /fetch\(EMAILJS_ENDPOINT/u);
     assert.match(script, /toEmail: "rkshekhavat@gmail\.com"/u);
+    assert.equal((script.match(/fetch\(EMAILJS_ENDPOINT/gu) || []).length, 1);
+    assert.match(script, /page_url: payload\.pageUrl/u);
+    assert.match(script, /browser_device: payload\.userAgent/u);
+    assert.match(script, /result_title: payload\.resultTitle/u);
+    assert.match(script, /console\.error\("Email submission failed:"/u);
     assert.doesNotMatch(script, /mailto:/u);
 });
 
