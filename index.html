@@ -3,48 +3,254 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Love Percentage Calculator</title>
+    <meta name="description" content="A deterministic love compatibility calculator with a clearly disclosed automatic email backup.">
+    <meta name="theme-color" content="#fff7f9">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Pairly — Two people. One playful spark.">
+    <meta property="og:description" content="A deterministic love compatibility calculator with a clearly disclosed automatic email backup.">
+    <meta property="og:image" content="/public/og.png">
+    <meta property="og:image:alt" content="Pairly — Two people. One playful spark. Same details, same score.">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Pairly — Two people. One playful spark.">
+    <meta name="twitter:description" content="A deterministic love compatibility calculator with a clearly disclosed automatic email backup.">
+    <meta name="twitter:image" content="/public/og.png">
+    <title>Pairly — Love Compatibility Calculator</title>
+    <link rel="icon" href="data:,">
     <link rel="stylesheet" href="styles.css">
-    <script src="https://smtpjs.com/v3/smtp.js"></script>
 </head>
 <body>
-    <div class="container">
-        <h1>Love Percentage Calculator</h1>
-        <form id="loveCalculatorForm">
-            <div class="input-section">
-                <div class="input-group">
-                    <h2>Partner 1</h2>
-                    <label for="name1">Name:</label>
-                    <input type="text" id="name1" required>
-                    <label for="dob1">Date of Birth:</label>
-                    <input type="date" id="dob1" required>
-                    <label for="relationshipStart1">Relationship Start Date:</label>
-                    <input type="date" id="relationshipStart1" required>
-                    <label for="place1">Place:</label>
-                    <input type="text" id="place1" required>
+    <div class="ambient ambient-one" aria-hidden="true"></div>
+    <div class="ambient ambient-two" aria-hidden="true"></div>
+    <div class="floating-heart heart-one" aria-hidden="true">♥</div>
+    <div class="floating-heart heart-two" aria-hidden="true">♥</div>
+
+    <main class="page-shell">
+        <header class="site-header">
+            <a class="brand" href="#calculator" aria-label="Jump to the Pairly calculator">
+                <span class="brand-mark" aria-hidden="true">♥</span>
+                <span>pairly</span>
+            </a>
+            <p class="local-badge"><span aria-hidden="true"></span> Automatic result backup</p>
+        </header>
+
+        <section class="calculator-shell" id="calculator" aria-labelledby="page-title">
+            <header class="intro-panel">
+                <div>
+                    <p class="eyebrow">Compatibility, made consistent</p>
+                    <h1 id="page-title">Two people.<br><span>One playful spark.</span></h1>
+                    <p class="intro-copy">
+                        Add a few details and discover your chemistry. No dice rolls here—the same pair always gets the same result.
+                    </p>
+
+                    <ul class="promise-list" aria-label="How Pairly works">
+                        <li><span aria-hidden="true">✓</span> Stable score, every time</li>
+                        <li><span aria-hidden="true">✓</span> Works in either partner order</li>
+                        <li><span aria-hidden="true">✓</span> Automatic backup after calculation</li>
+                    </ul>
                 </div>
-                <div class="input-group">
-                    <h2>Partner 2</h2>
-                    <label for="name2">Name:</label>
-                    <input type="text" id="name2" required>
-                    <label for="dob2">Date of Birth:</label>
-                    <input type="date" id="dob2" required>
-                    <label for="relationshipStart2">Relationship Start Date:</label>
-                    <input type="date" id="relationshipStart2" required>
-                    <label for="place2">Place:</label>
-                    <input type="text" id="place2" required>
+
+                <div class="formula-card">
+                    <div class="formula-icon" aria-hidden="true">∞</div>
+                    <div>
+                        <strong>A little formula, not a verdict</strong>
+                        <p>Names shape 50%, birthdays 30%, and your shared story 20% of this just-for-fun result.</p>
+                    </div>
+                </div>
+            </header>
+
+            <section class="form-panel" aria-labelledby="form-title">
+                <div class="form-heading">
+                    <div>
+                        <p class="step-label">Your compatibility snapshot</p>
+                        <h2 id="form-title">Tell us about your pair</h2>
+                        <p class="required-note">All fields are required unless marked optional.</p>
+                    </div>
+                    <span class="heart-seal" aria-hidden="true">♥</span>
+                </div>
+
+                <noscript>
+                    <p class="noscript-message">Pairly needs JavaScript to calculate a private, consistent score. Please enable it and reload this page.</p>
+                    <style>#loveCalculatorForm { display: none; }</style>
+                </noscript>
+
+                <form id="loveCalculatorForm" action="#calculator" method="get" data-current-step="1" novalidate>
+                    <div class="mobile-stepper" aria-label="Form progress">
+                        <div class="mobile-stepper-copy">
+                            <span id="mobileStepLabel" tabindex="-1">First person</span>
+                            <strong id="mobileStepCount">Step 1 of 3</strong>
+                        </div>
+                        <div class="mobile-progress-track" id="mobileProgressTrack" role="progressbar" aria-valuemin="1" aria-valuemax="3" aria-valuenow="1" aria-labelledby="mobileStepCount">
+                            <span id="mobileProgressBar"></span>
+                        </div>
+                    </div>
+
+                    <div class="partners-grid">
+                        <fieldset class="person-card person-one" data-mobile-step="1">
+                            <legend>
+                                <span class="person-number">01</span>
+                                First person
+                            </legend>
+
+                            <div class="field">
+                                <label for="name1">Full name</label>
+                                <input type="text" id="name1" placeholder="e.g. Alex Morgan" minlength="1" maxlength="60" autocomplete="section-person-one name" required aria-describedby="name1Error">
+                                <span class="field-error" id="name1Error" role="status"></span>
+                            </div>
+
+                            <div class="field">
+                                <label for="dob1">Date of birth</label>
+                                <input type="date" id="dob1" min="1900-01-01" autocomplete="section-person-one bday" required aria-describedby="dob1Error">
+                                <span class="field-error" id="dob1Error" role="status"></span>
+                            </div>
+
+                            <div class="field">
+                                <label for="place1">City or hometown</label>
+                                <input type="text" id="place1" placeholder="e.g. Jaipur" minlength="1" maxlength="80" autocomplete="off" required aria-describedby="place1Error">
+                                <span class="field-error" id="place1Error" role="status"></span>
+                            </div>
+                        </fieldset>
+
+                        <div class="pair-connector" aria-hidden="true"><span>♥</span></div>
+
+                        <fieldset class="person-card person-two" data-mobile-step="2">
+                            <legend>
+                                <span class="person-number">02</span>
+                                Second person
+                            </legend>
+
+                            <div class="field">
+                                <label for="name2">Full name</label>
+                                <input type="text" id="name2" placeholder="e.g. Jordan Lee" minlength="1" maxlength="60" autocomplete="section-person-two name" required aria-describedby="name2Error">
+                                <span class="field-error" id="name2Error" role="status"></span>
+                            </div>
+
+                            <div class="field">
+                                <label for="dob2">Date of birth</label>
+                                <input type="date" id="dob2" min="1900-01-01" autocomplete="section-person-two bday" required aria-describedby="dob2Error">
+                                <span class="field-error" id="dob2Error" role="status"></span>
+                            </div>
+
+                            <div class="field">
+                                <label for="place2">City or hometown</label>
+                                <input type="text" id="place2" placeholder="e.g. Udaipur" minlength="1" maxlength="80" autocomplete="off" required aria-describedby="place2Error">
+                                <span class="field-error" id="place2Error" role="status"></span>
+                            </div>
+                        </fieldset>
+                    </div>
+
+                    <div class="shared-fields" data-mobile-step="3">
+                        <div class="field">
+                            <label for="relationshipStart">When did your story begin? <span>(optional)</span></label>
+                            <input type="date" id="relationshipStart" min="1900-01-01" aria-describedby="relationshipStartHint relationshipStartError">
+                            <small class="field-hint" id="relationshipStartHint">Leave blank if you have not started dating.</small>
+                            <span class="field-error" id="relationshipStartError" role="status"></span>
+                        </div>
+
+                        <div class="field">
+                            <label for="email">Your contact email <span>(optional)</span></label>
+                            <input type="email" id="email" placeholder="you@example.com" maxlength="254" autocomplete="email" aria-describedby="emailHint emailError">
+                            <small class="field-hint" id="emailHint">Included in the submission so the site owner can reply.</small>
+                            <span class="field-error" id="emailError" role="status"></span>
+                        </div>
+                    </div>
+
+                    <div class="bot-field" aria-hidden="true">
+                        <label for="website">Website</label>
+                        <input type="text" id="website" tabindex="-1" autocomplete="off">
+                    </div>
+
+                    <div class="backup-section" data-mobile-step="3">
+                        <div class="backup-notice" id="backupNotice">
+                            <span class="backup-notice-icon" aria-hidden="true">↗</span>
+                            <div>
+                                <strong>Automatic email backup</strong>
+                                <p>When you calculate, both names, birth dates, cities, relationship date, optional contact email, and the result will be sent to <strong>rkshekhavat@gmail.com</strong> as a backup.</p>
+                            </div>
+                        </div>
+                        <details class="privacy-details">
+                            <summary>What happens to the submitted details?</summary>
+                            <p>The details are emailed only after you press the calculation button. Only enter another person’s information if you have their permission. The mailbox owner controls backup retention and deletion.</p>
+                        </details>
+                    </div>
+
+                    <div class="mobile-navigation">
+                        <button class="mobile-back-button" type="button" id="mobileBackButton">← Back</button>
+                        <button class="mobile-next-button" type="button" id="mobileNextButton">Continue <span aria-hidden="true">→</span></button>
+                    </div>
+
+                    <p class="form-status" id="formStatus" role="alert"></p>
+
+                    <button class="primary-button" type="submit" id="calculateButton">
+                        <span id="calculateButtonText">Calculate </span>
+                        <span class="button-icon" aria-hidden="true">♥</span>
+                    </button>
+                    <p class="privacy-copy"><span aria-hidden="true">⌁</span> Pressing the button calculates the score and automatically emails the disclosed backup.</p>
+                </form>
+            </section>
+        </section>
+
+        <section class="result-panel" id="resultPanel" role="region" aria-labelledby="resultTitle" hidden>
+            <div class="result-topline">
+                <p class="eyebrow">Your Pairly result</p>
+                <span id="pairNames">Your match</span>
+            </div>
+
+            <div class="result-grid">
+                <div class="score-area">
+                    <div class="score-ring" id="scoreRing" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Compatibility score">
+                        <div class="score-center">
+                            <span><strong id="scoreNumber">0</strong><small>%</small></span>
+                            <em>compatible</em>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="result-story">
+                    <p class="result-kicker">The chemistry check says…</p>
+                    <h2 id="resultTitle" tabindex="-1">A lovely rhythm</h2>
+                    <p id="resultMessage">Your details create a playful blend of warmth, curiosity, and shared energy.</p>
+
+                    <section aria-labelledby="breakdownTitle">
+                        <h3 class="sr-only" id="breakdownTitle">Compatibility breakdown</h3>
+                        <dl class="breakdown">
+                            <div class="breakdown-row">
+                                <div><dt>Name chemistry</dt><dd><strong id="nameScoreText">0%</strong></dd></div>
+                                <div class="breakdown-track" aria-hidden="true"><span id="nameScoreBar"></span></div>
+                            </div>
+                            <div class="breakdown-row">
+                                <div><dt>Birthday rhythm</dt><dd><strong id="birthdayScoreText">0%</strong></dd></div>
+                                <div class="breakdown-track" aria-hidden="true"><span id="birthdayScoreBar"></span></div>
+                            </div>
+                            <div class="breakdown-row">
+                                <div><dt>Shared story</dt><dd><strong id="storyScoreText">0%</strong></dd></div>
+                                <div class="breakdown-track" aria-hidden="true"><span id="storyScoreBar"></span></div>
+                            </div>
+                        </dl>
+                    </section>
                 </div>
             </div>
-            <button type="button" onclick="calculateLove();reset();return false;">Calculate Love</button>
-        </form>
-        <div id="result" class="result"></div>
-        <div class="hearts">
-            <div class="heart"></div>
-            <div class="heart"></div>
-            <div class="heart"></div>
-            <div class="heart"></div>
-        </div>
-    </div>
+
+            <div class="result-actions">
+                <button class="secondary-button" type="button" id="copyResultButton"><span aria-hidden="true">⧉</span> Copy result</button>
+                <button class="text-button" type="button" id="startOverButton">Start over</button>
+            </div>
+            <div class="delivery-notice" id="deliveryNotice" role="status" aria-live="polite">
+                <span class="delivery-icon" id="deliveryIcon" aria-hidden="true">↗</span>
+                <div>
+                    <strong id="deliveryTitle">Saving your email backup…</strong>
+                    <p id="deliveryMessage">Your score is ready while secure backup delivery finishes.</p>
+                </div>
+            </div>
+            <p class="share-status" id="shareStatus" role="status" aria-live="polite"></p>
+            <p class="disclaimer">Pairly is a deterministic entertainment experience—not a scientific or relationship assessment.</p>
+        </section>
+
+        <footer class="site-footer">
+            <p>Made with <span aria-label="love">♥</span> and a little math.</p>
+            <p>Same details in, same score out.</p>
+        </footer>
+    </main>
+
     <script src="script.js"></script>
 </body>
 </html>

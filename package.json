@@ -1,0 +1,10 @@
+{
+  "name": "pairly-love-calculator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A private, deterministic love compatibility calculator.",
+  "scripts": {
+    "build": "node build.js",
+    "check": "node --check script.js && node --check worker-template.mjs && node build.js && node --test tests/*.test.js"
+  }
+}
