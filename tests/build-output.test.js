@@ -35,69 +35,14 @@ test("the production worker rejects mutating requests", async () => {
     assert.equal(response.headers.get("allow"), "GET, HEAD");
 });
 
-test("the production worker validates disclosure, recomputes the score, and emails a fixed owner", async () => {
-    const workerUrl = `${pathToFileURL(workerPath).href}?email-test=${Date.now()}`;
+test("the production policy permits the EmailJS browser endpoint", async () => {
+    const workerUrl = `${pathToFileURL(workerPath).href}?csp-test=${Date.now()}`;
     const worker = (await import(workerUrl)).default;
-    const originalFetch = global.fetch;
-    let providerRequest = null;
-    global.fetch = async (requestUrl, options) => {
-        providerRequest = { requestUrl, options };
-        return new Response(JSON.stringify({ TransactionID: "fixture" }), { status: 200 });
-    };
-    const payload = {
-        personOne: { name: "Alex Morgan", dob: "1994-02-18", place: "Jaipur" },
-        personTwo: { name: "Jordan Lee", dob: "1996-09-07", place: "Udaipur" },
-        relationshipStart: "2020-04-12",
-        contactEmail: "alex@example.com",
-        disclosureAcknowledged: true,
-        privacyNoticeVersion: "2026-08-11",
-        result: { score: 1, nameScore: 1, birthdayScore: 1, storyScore: 1 },
-        submissionId: "fixture-submission",
-        formStartedAt: Date.now() - 2000,
-        submittedAt: new Date().toISOString(),
-        website: ""
-    };
+    const response = await worker.fetch(new Request("https://pairly.test/"), {});
+    const policy = response.headers.get("content-security-policy");
 
-    try {
-        const response = await worker.fetch(new Request("https://pairly.test/api/send-result", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Origin": "https://pairly.test",
-                "CF-Connecting-IP": "203.0.113.10"
-            },
-            body: JSON.stringify(payload)
-        }), {
-            ELASTIC_EMAIL_API_KEY: "test-api-key",
-            OWNER_EMAIL: "owner@example.com",
-            FROM_EMAIL: "verified@example.com"
-        });
-        const body = await response.json();
-        const providerBody = JSON.parse(providerRequest.options.body);
-
-        assert.equal(response.status, 200);
-        assert.deepEqual(body, { sent: true, score: 76 });
-        assert.equal(providerRequest.requestUrl, "https://api.elasticemail.com/v4/emails/transactional");
-        assert.equal(providerRequest.options.headers["X-ElasticEmail-ApiKey"], "test-api-key");
-        assert.deepEqual(providerBody.Recipients.To, ["owner@example.com"]);
-        assert.match(providerBody.Content.Subject, /76%/u);
-        assert.match(providerBody.Content.Body[1].Content, /Automatic-backup disclosure: shown/u);
-    } finally {
-        global.fetch = originalFetch;
-    }
-});
-
-test("the production worker refuses email when the backup disclosure marker is missing", async () => {
-    const workerUrl = `${pathToFileURL(workerPath).href}?disclosure-test=${Date.now()}`;
-    const worker = (await import(workerUrl)).default;
-    const response = await worker.fetch(new Request("https://pairly.test/api/send-result", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ disclosureAcknowledged: false })
-    }), {});
-
-    assert.equal(response.status, 400);
-    assert.deepEqual(await response.json(), { sent: false });
+    assert.match(policy, /connect-src 'self' https:\/\/api\.emailjs\.com/u);
+    assert.doesNotMatch(policy, /elasticemail|smtpjs/iu);
 });
 
 test("the social preview is included in the production asset tree", () => {

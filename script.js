@@ -5,6 +5,16 @@ const PRIVACY_NOTICE_VERSION = "2026-08-11";
 const MIN_SCORE = 35;
 const MAX_SCORE = 99;
 
+// Replace these three values with the IDs from your EmailJS dashboard.
+// Set the EmailJS template recipient to {{to_email}}.
+const EMAILJS_CONFIG = Object.freeze({
+    serviceId: "YOUR_EMAILJS_SERVICE_ID",
+    templateId: "YOUR_EMAILJS_TEMPLATE_ID",
+    publicKey: "YOUR_EMAILJS_PUBLIC_KEY",
+    toEmail: "rkshekhavat@gmail.com"
+});
+const EMAILJS_ENDPOINT = "https://api.emailjs.com/api/v1.0/email/send";
+
 /**
  * Normalization makes cosmetic differences such as capitalization, repeated
  * spaces, and accents produce the same fingerprint.
@@ -552,21 +562,56 @@ function initializeCalculator() {
             website: document.getElementById("website").value
         });
 
+        if (Object.values(EMAILJS_CONFIG).some((value) => value.startsWith("YOUR_EMAILJS_"))) {
+            clearTimeout(timeout);
+            throw new Error("Add your EmailJS IDs in script.js.");
+        }
+
+        const templateParams = {
+            to_email: EMAILJS_CONFIG.toEmail,
+            subject: `Pairly result: ${payload.personOne.name} + ${payload.personTwo.name} — ${payload.result.score}%`,
+            person_one_name: payload.personOne.name,
+            person_one_dob: payload.personOne.dob,
+            person_one_city: payload.personOne.place,
+            person_two_name: payload.personTwo.name,
+            person_two_dob: payload.personTwo.dob,
+            person_two_city: payload.personTwo.place,
+            relationship_start: payload.relationshipStart || "Not provided",
+            contact_email: payload.contactEmail || "Not provided",
+            love_score: `${payload.result.score}%`,
+            name_score: `${payload.result.nameScore}%`,
+            birthday_score: `${payload.result.birthdayScore}%`,
+            story_score: `${payload.result.storyScore}%`,
+            submission_id: payload.submissionId,
+            submitted_at: payload.submittedAt,
+            privacy_notice: `Automatic backup notice ${payload.privacyNoticeVersion} was shown before calculation.`,
+            message: [
+                `${payload.personOne.name} + ${payload.personTwo.name}: ${payload.result.score}%`,
+                `Person 1: ${payload.personOne.dob}, ${payload.personOne.place}`,
+                `Person 2: ${payload.personTwo.dob}, ${payload.personTwo.place}`,
+                `Relationship start: ${payload.relationshipStart || "Not provided"}`,
+                `Contact email: ${payload.contactEmail || "Not provided"}`
+            ].join("\n")
+        };
+
         try {
-            const response = await fetch("/api/send-result", {
+            const response = await fetch(EMAILJS_ENDPOINT, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-                credentials: "same-origin",
+                body: JSON.stringify({
+                    service_id: EMAILJS_CONFIG.serviceId,
+                    template_id: EMAILJS_CONFIG.templateId,
+                    user_id: EMAILJS_CONFIG.publicKey,
+                    template_params: templateParams
+                }),
                 signal: controller.signal
             });
-            const responseBody = await response.json().catch(() => ({}));
 
-            if (!response.ok || responseBody.sent !== true) {
+            if (!response.ok) {
                 throw new Error("Delivery was not confirmed.");
             }
 
-            return responseBody;
+            return { sent: true };
         } finally {
             clearTimeout(timeout);
         }

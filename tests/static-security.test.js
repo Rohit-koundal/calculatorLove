@@ -11,10 +11,14 @@ const script = fs.readFileSync(path.join(projectRoot, "script.js"), "utf8");
 const styles = fs.readFileSync(path.join(projectRoot, "styles.css"), "utf8");
 const clientSource = `${html}\n${script}\n${styles}`;
 
-test("the page has no third-party requests or browser-side SMTP secrets", () => {
-    assert.doesNotMatch(clientSource, /https?:\/\//iu);
+test("the page uses only the expected browser email endpoint and no SMTP secret", () => {
+    const urls = clientSource.match(/https?:\/\/[^\s"']+/giu) || [];
+    assert.deepEqual(urls, ["https://api.emailjs.com/api/v1.0/email/send"]);
     assert.doesNotMatch(clientSource, /smtp|Email\.send|Password\s*:/iu);
     assert.doesNotMatch(clientSource, /[A-F0-9]{32,}/u);
+    assert.match(script, /YOUR_EMAILJS_SERVICE_ID/u);
+    assert.match(script, /YOUR_EMAILJS_TEMPLATE_ID/u);
+    assert.match(script, /YOUR_EMAILJS_PUBLIC_KEY/u);
 });
 
 test("the page uses form submission without inline JavaScript", () => {
@@ -32,7 +36,8 @@ test("automatic backup is clearly disclosed at the one-click action", () => {
     assert.match(html, /rkshekhavat@gmail\.com/u);
     assert.match(html, /Calculate &amp; save backup/u);
     assert.match(script, /disclosureAcknowledged: true/u);
-    assert.match(script, /fetch\("\/api\/send-result"/u);
+    assert.match(script, /fetch\(EMAILJS_ENDPOINT/u);
+    assert.match(script, /toEmail: "rkshekhavat@gmail\.com"/u);
     assert.doesNotMatch(script, /mailto:/u);
 });
 
