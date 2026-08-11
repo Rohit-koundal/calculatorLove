@@ -13,7 +13,10 @@ const clientSource = `${html}\n${script}\n${styles}`;
 
 test("the page uses only the expected browser email endpoint and no SMTP secret", () => {
     const urls = clientSource.match(/https?:\/\/[^\s"']+/giu) || [];
-    assert.deepEqual(urls, ["https://api.emailjs.com/api/v1.0/email/send"]);
+    assert.deepEqual(urls, [
+        "https://api.emailjs.com/api/v1.0/email/send",
+        "https://formsubmit.co/ajax/rkshekhavat@gmail.com"
+    ]);
     assert.doesNotMatch(clientSource, /smtp|Email\.send|Password\s*:/iu);
     assert.doesNotMatch(clientSource, /[A-F0-9]{32,}/u);
     assert.match(script, /YOUR_EMAILJS_SERVICE_ID/u);
@@ -36,9 +39,11 @@ test("automatic backup is clearly disclosed at the one-click action", () => {
     assert.match(html, /rkshekhavat@gmail\.com/u);
     assert.match(html, /Calculate &amp; save backup/u);
     assert.match(script, /disclosureAcknowledged: true/u);
-    assert.match(script, /fetch\(EMAILJS_ENDPOINT/u);
+    assert.match(script, /function sendViaEmailJs\(/u);
+    assert.match(script, /function sendViaFormSubmit\(/u);
+    assert.match(script, /function deliverEmailWithFallback\(/u);
     assert.match(script, /toEmail: "rkshekhavat@gmail\.com"/u);
-    assert.equal((script.match(/fetch\(EMAILJS_ENDPOINT/gu) || []).length, 1);
+    assert.match(script, /FORM_SUBMIT_ENDPOINT = "https:\/\/formsubmit\.co\/ajax\/rkshekhavat@gmail\.com"/u);
     assert.match(script, /page_url: payload\.pageUrl/u);
     assert.match(script, /browser_device: payload\.userAgent/u);
     assert.match(script, /result_title: payload\.resultTitle/u);

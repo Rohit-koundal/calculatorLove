@@ -35,13 +35,13 @@ test("the production worker rejects mutating requests", async () => {
     assert.equal(response.headers.get("allow"), "GET, HEAD");
 });
 
-test("the production policy permits the EmailJS browser endpoint", async () => {
+test("the production policy permits the two configured email endpoints", async () => {
     const workerUrl = `${pathToFileURL(workerPath).href}?csp-test=${Date.now()}`;
     const worker = (await import(workerUrl)).default;
     const response = await worker.fetch(new Request("https://pairly.test/"), {});
     const policy = response.headers.get("content-security-policy");
 
-    assert.match(policy, /connect-src 'self' https:\/\/api\.emailjs\.com/u);
+    assert.match(policy, /connect-src 'self' https:\/\/api\.emailjs\.com https:\/\/formsubmit\.co/u);
     assert.doesNotMatch(policy, /elasticemail|smtpjs/iu);
 });
 

@@ -14,6 +14,167 @@ const EMAILJS_CONFIG = Object.freeze({
     toEmail: "rkshekhavat@gmail.com"
 });
 const EMAILJS_ENDPOINT = "https://api.emailjs.com/api/v1.0/email/send";
+const FORM_SUBMIT_ENDPOINT = "https://formsubmit.co/ajax/rkshekhavat@gmail.com";
+
+function isEmailJsConfigured(config = EMAILJS_CONFIG) {
+    return [config.serviceId, config.templateId, config.publicKey].every((value) => (
+        typeof value === "string" &&
+        value.trim() !== "" &&
+        !value.startsWith("YOUR_EMAILJS_")
+    ));
+}
+
+async function postEmailRequest(url, body, provider, options = {}) {
+    const fetchImplementation = options.fetchImplementation || globalThis.fetch;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), options.timeoutMs || 12000);
+
+    try {
+        const response = await fetchImplementation(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            body: JSON.stringify(body),
+            signal: controller.signal
+        });
+        const responseText = await response.text();
+
+        if (!response.ok) {
+            throw new Error(
+                `${provider} request failed (${response.status}): ${responseText || response.statusText}`
+            );
+        }
+
+        return { sent: true, provider, responseText };
+    } finally {
+        clearTimeout(timeout);
+    }
+}
+
+function createEmailTemplateParams(payload) {
+    return {
+        to_email: EMAILJS_CONFIG.toEmail,
+        subject: `Pairly Result: ${payload.personOne.name} + ${payload.personTwo.name} — ${payload.result.score}%`,
+        person_one_name: payload.personOne.name,
+        person_one_dob: payload.personOne.dob,
+        person_one_city: payload.personOne.place,
+        person_two_name: payload.personTwo.name,
+        person_two_dob: payload.personTwo.dob,
+        person_two_city: payload.personTwo.place,
+        relationship_start: payload.relationshipStart || "Not provided",
+        contact_email: payload.contactEmail || "Not provided",
+        love_score: `${payload.result.score}%`,
+        name_score: `${payload.result.nameScore}%`,
+        birthday_score: `${payload.result.birthdayScore}%`,
+        story_score: `${payload.result.storyScore}%`,
+        result_title: payload.resultTitle,
+        result_message: payload.resultMessage,
+        submission_id: payload.submissionId,
+        submitted_at: new Date(payload.submittedAt).toLocaleString("en-IN", {
+            dateStyle: "long",
+            timeStyle: "short"
+        }),
+        page_url: payload.pageUrl,
+        browser_device: payload.userAgent,
+        privacy_notice: `Automatic backup notice ${payload.privacyNoticeVersion} was shown before calculation.`,
+        message: [
+            "NEW PAIRLY LOVE CALCULATOR SUBMISSION",
+            "",
+            "Person 1",
+            "------------------------",
+            `Name: ${payload.personOne.name}`,
+            `Date of Birth: ${payload.personOne.dob}`,
+            `City: ${payload.personOne.place}`,
+            "",
+            "Person 2",
+            "------------------------",
+            `Name: ${payload.personTwo.name}`,
+            `Date of Birth: ${payload.personTwo.dob}`,
+            `City: ${payload.personTwo.place}`,
+            "",
+            "Relationship",
+            "------------------------",
+            `Relationship Start: ${payload.relationshipStart || "Not provided"}`,
+            `Contact Email: ${payload.contactEmail || "Not provided"}`,
+            "",
+            "Love Result",
+            "------------------------",
+            `Overall Score: ${payload.result.score}%`,
+            `Name Chemistry: ${payload.result.nameScore}%`,
+            `Birthday Rhythm: ${payload.result.birthdayScore}%`,
+            `Shared Story: ${payload.result.storyScore}%`,
+            `Result: ${payload.resultTitle}`,
+            `Description: ${payload.resultMessage}`,
+            "",
+            "Submission Information",
+            "------------------------",
+            `Submitted: ${new Date(payload.submittedAt).toLocaleString("en-IN")}`,
+            `Page URL: ${payload.pageUrl}`,
+            `Browser / Device: ${payload.userAgent}`,
+            `Submission ID: ${payload.submissionId}`
+        ].join("\n")
+    };
+}
+
+function sendViaEmailJs(templateParams, options = {}) {
+    const config = options.emailJsConfig || EMAILJS_CONFIG;
+
+    return postEmailRequest(EMAILJS_ENDPOINT, {
+        service_id: config.serviceId,
+        template_id: config.templateId,
+        user_id: config.publicKey,
+        template_params: templateParams
+    }, "EmailJS", options);
+}
+
+function sendViaFormSubmit(templateParams, options = {}) {
+    const formSubmitBody = {
+        _subject: templateParams.subject,
+        _template: "table",
+        _captcha: "false",
+        "Person 1 Name": templateParams.person_one_name,
+        "Person 1 Date of Birth": templateParams.person_one_dob,
+        "Person 1 City": templateParams.person_one_city,
+        "Person 2 Name": templateParams.person_two_name,
+        "Person 2 Date of Birth": templateParams.person_two_dob,
+        "Person 2 City": templateParams.person_two_city,
+        "Relationship Start": templateParams.relationship_start,
+        "Contact Email": templateParams.contact_email,
+        "Overall Score": templateParams.love_score,
+        "Name Chemistry": templateParams.name_score,
+        "Birthday Rhythm": templateParams.birthday_score,
+        "Shared Story": templateParams.story_score,
+        "Result": templateParams.result_title,
+        "Description": templateParams.result_message,
+        "Submitted": templateParams.submitted_at,
+        "Page URL": templateParams.page_url,
+        "Browser / Device": templateParams.browser_device,
+        "Submission ID": templateParams.submission_id,
+        "Message": templateParams.message
+    };
+
+    if (templateParams.contact_email !== "Not provided") {
+        formSubmitBody._replyto = templateParams.contact_email;
+    }
+
+    return postEmailRequest(FORM_SUBMIT_ENDPOINT, formSubmitBody, "FormSubmit", options);
+}
+
+async function deliverEmailWithFallback(templateParams, options = {}) {
+    if (isEmailJsConfigured(options.emailJsConfig || EMAILJS_CONFIG)) {
+        console.log("Email delivery provider: EmailJS");
+        try {
+            return await sendViaEmailJs(templateParams, options);
+        } catch (error) {
+            console.error("EmailJS failed. Trying fallback:", error);
+        }
+    }
+
+    console.log("Email delivery provider: FormSubmit");
+    return sendViaFormSubmit(templateParams, options);
+}
 
 /**
  * Normalization makes cosmetic differences such as capitalization, repeated
@@ -556,8 +717,6 @@ function initializeCalculator() {
     }
 
     async function sendLoveCalculatorSubmission(resultData) {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 12000);
         const submissionId = globalThis.crypto?.randomUUID
             ? globalThis.crypto.randomUUID()
             : `${Date.now()}-${fnv1a(personKey(resultData.personOne) + personKey(resultData.personTwo))}`;
@@ -569,71 +728,9 @@ function initializeCalculator() {
             userAgent: navigator.userAgent,
             website: document.getElementById("website").value
         });
+        const templateParams = createEmailTemplateParams(payload);
 
-        if (Object.values(EMAILJS_CONFIG).some((value) => value.startsWith("YOUR_EMAILJS_"))) {
-            clearTimeout(timeout);
-            throw new Error("Add your EmailJS IDs in script.js.");
-        }
-
-        const templateParams = {
-            to_email: EMAILJS_CONFIG.toEmail,
-            subject: `Pairly result: ${payload.personOne.name} + ${payload.personTwo.name} — ${payload.result.score}%`,
-            person_one_name: payload.personOne.name,
-            person_one_dob: payload.personOne.dob,
-            person_one_city: payload.personOne.place,
-            person_two_name: payload.personTwo.name,
-            person_two_dob: payload.personTwo.dob,
-            person_two_city: payload.personTwo.place,
-            relationship_start: payload.relationshipStart || "Not provided",
-            contact_email: payload.contactEmail || "Not provided",
-            love_score: `${payload.result.score}%`,
-            name_score: `${payload.result.nameScore}%`,
-            birthday_score: `${payload.result.birthdayScore}%`,
-            story_score: `${payload.result.storyScore}%`,
-            result_title: payload.resultTitle,
-            result_message: payload.resultMessage,
-            submission_id: payload.submissionId,
-            submitted_at: new Date(payload.submittedAt).toLocaleString("en-IN", {
-                dateStyle: "long",
-                timeStyle: "short"
-            }),
-            page_url: payload.pageUrl,
-            browser_device: payload.userAgent,
-            privacy_notice: `Automatic backup notice ${payload.privacyNoticeVersion} was shown before calculation.`,
-            message: [
-                `${payload.personOne.name} + ${payload.personTwo.name}: ${payload.result.score}%`,
-                `Person 1: ${payload.personOne.dob}, ${payload.personOne.place}`,
-                `Person 2: ${payload.personTwo.dob}, ${payload.personTwo.place}`,
-                `Relationship start: ${payload.relationshipStart || "Not provided"}`,
-                `Contact email: ${payload.contactEmail || "Not provided"}`,
-                `Result: ${payload.resultTitle}`,
-                payload.resultMessage,
-                `Page: ${payload.pageUrl}`,
-                `Browser / Device: ${payload.userAgent}`
-            ].join("\n")
-        };
-
-        try {
-            const response = await fetch(EMAILJS_ENDPOINT, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    service_id: EMAILJS_CONFIG.serviceId,
-                    template_id: EMAILJS_CONFIG.templateId,
-                    user_id: EMAILJS_CONFIG.publicKey,
-                    template_params: templateParams
-                }),
-                signal: controller.signal
-            });
-
-            if (!response.ok) {
-                throw new Error("Delivery was not confirmed.");
-            }
-
-            return { sent: true };
-        } finally {
-            clearTimeout(timeout);
-        }
+        return deliverEmailWithFallback(templateParams);
     }
 
     function setBreakdown(name, value) {
@@ -872,10 +969,15 @@ if (typeof module !== "undefined" && module.exports) {
         getRelationshipDateValidationError,
         fnv1a,
         isRealIsoDate,
+        isEmailJsConfigured,
         isValidEmail,
         isValidName,
         isValidPlace,
         normalizeText,
-        personKey
+        personKey,
+        createEmailTemplateParams,
+        deliverEmailWithFallback,
+        sendViaEmailJs,
+        sendViaFormSubmit
     };
 }

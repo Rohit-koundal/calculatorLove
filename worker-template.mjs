@@ -1,7 +1,7 @@
 const EMBEDDED_ASSETS = /*__PAIRLY_EMBEDDED_ASSETS__*/ {};
 
 const SECURITY_HEADERS = {
-    "Content-Security-Policy": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https://api.emailjs.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+    "Content-Security-Policy": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https://api.emailjs.com https://formsubmit.co; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
     "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
     "Referrer-Policy": "no-referrer",
     "X-Content-Type-Options": "nosniff",
